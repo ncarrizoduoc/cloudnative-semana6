@@ -1,5 +1,9 @@
 package com.duoc.guiasdespacho.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -60,6 +64,12 @@ public class GuiaService {
     public List<Guia> filtrarGuias(String fechaString, int transportista){
         LocalDate fecha = LocalDate.parse(fechaString, DateTimeFormatter.ofPattern(DATEFORMAT));
         return guiaRepo.findByTransportista_IdAndFecha(transportista, fecha);
+    }
+
+    public void escribirGuiaAEfs(Guia guia) throws IOException{
+        String ruta = String.format("/app/efs/guia%d.txt", guia.getId());
+        Path filePath = Paths.get(ruta);
+        Files.writeString(filePath, guia.toString());
     }
 
 }

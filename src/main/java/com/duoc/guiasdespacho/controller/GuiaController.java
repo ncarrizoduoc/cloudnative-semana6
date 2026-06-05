@@ -57,22 +57,15 @@ public class GuiaController {
     @PostMapping("/new")
     public ResponseEntity<Guia> registrarGuia(
                                             @RequestParam("bucketName") String bucketName,
-                                            @Valid @RequestBody GuiaRequest request){
+                                            @Valid @RequestBody GuiaRequest request) throws IOException{
         Guia creado = guiaService.registrarGuia(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
             .buildAndExpand(creado.getId())
             .toUri();
 
-        /*
-        Path filePath = Paths.get("C:/Users/nicol/Downloads/response.txt");
-        try{
-            Files.writeString(filePath, creado.toString());
-            System.out.println("Respuesta escrita con exito a: " + filePath);
-        } catch(IOException e){
-            System.out.println("Error al escribir a archivo: " + e.getMessage());
-        }
-        */
+        //Se guarda el archivo de la guia al EFS
+        guiaService.escribirGuiaAEfs(creado);
         
         //Se sube la guia como archivo .txt al bucket S3
         awsService.subirGuia(bucketName, creado);
