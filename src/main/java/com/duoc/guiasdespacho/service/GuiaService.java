@@ -31,7 +31,7 @@ public class GuiaService {
         return guiaRepo.findAll();
     }
 
-    public Optional<Guia> buscarGuia(int id){
+    public Optional<Guia> buscarGuia(Long id){
         if (guiaRepo.existsById(id)){
             return Optional.of(guiaRepo.findById(id).get());
         } else {
@@ -41,10 +41,11 @@ public class GuiaService {
 
     public Guia registrarGuia(GuiaRequest request){
         Guia guia = requestMapper.toGuia(request);
+        guia.setId(null);
         return guiaRepo.save(guia);
     }
 
-    public Optional<Guia> modificarGuia(int id, GuiaRequest request){
+    public Optional<Guia> modificarGuia(Long id, GuiaRequest request){
         Guia guia = requestMapper.toGuia(request);
         if (guiaRepo.existsById(id)){
             guia.setId(id);
@@ -53,23 +54,12 @@ public class GuiaService {
         return Optional.empty();
     }
 
-    public boolean eliminarGuia(int id){
+    public boolean eliminarGuia(Long id){
         if (guiaRepo.existsById(id)){
             guiaRepo.deleteById(id);
             return true;
         }
         return false;
-    }
-
-    public List<Guia> filtrarGuias(String fechaString, int transportista){
-        LocalDate fecha = LocalDate.parse(fechaString, DateTimeFormatter.ofPattern(DATEFORMAT));
-        return guiaRepo.findByTransportista_IdAndFecha(transportista, fecha);
-    }
-
-    public void escribirGuiaAEfs(Guia guia) throws IOException{
-        String ruta = String.format("/app/efs/guia%d.txt", guia.getId());
-        Path filePath = Paths.get(ruta);
-        Files.writeString(filePath, guia.toString());
     }
 
 }

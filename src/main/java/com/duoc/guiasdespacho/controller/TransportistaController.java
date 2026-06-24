@@ -34,7 +34,7 @@ public class TransportistaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Transportista> buscarTransportista(@PathVariable @PositiveOrZero int id){
+    public ResponseEntity<Transportista> buscarTransportista(@PathVariable @PositiveOrZero Long id){
         return transportistaService.buscarTransportista(id)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -51,14 +51,14 @@ public class TransportistaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Transportista> modificarTransportista(@PathVariable @PositiveOrZero int id, @Valid @RequestBody Transportista transportista){
+    public ResponseEntity<Transportista> modificarTransportista(@PathVariable @PositiveOrZero Long id, @Valid @RequestBody Transportista transportista){
         return transportistaService.modificarTransportista(id, transportista)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarTransportista(@PathVariable @PositiveOrZero int id){
+    public ResponseEntity<Void> eliminarTransportista(@PathVariable @PositiveOrZero Long id){
         return transportistaService.eliminarTransportista(id)
             ? ResponseEntity.noContent().build()
             : ResponseEntity.notFound().build();

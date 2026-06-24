@@ -9,10 +9,10 @@ import org.springframework.stereotype.Repository;
 import com.duoc.guiasdespacho.model.Guia;
 
 @Repository
-public interface GuiaRepository extends JpaRepository<Guia, Integer>{
-    List<Guia> findByTransportista_IdAndFecha(Integer transportistaId, LocalDate fecha);
+public interface GuiaRepository extends JpaRepository<Guia, Long>{
+    List<Guia> findByTransportista_IdAndFecha(Long transportistaId, LocalDate fecha);
 
-    List<Guia> findByTransportista_Id(Integer transportistaId);
+    List<Guia> findByTransportista_Id(Long transportistaId);
 
     List<Guia> findByFecha(LocalDate fecha);
 

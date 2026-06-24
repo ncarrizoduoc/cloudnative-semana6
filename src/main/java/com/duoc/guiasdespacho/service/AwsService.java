@@ -1,7 +1,6 @@
 package com.duoc.guiasdespacho.service;
 
 import com.duoc.guiasdespacho.model.Asset;
-import com.duoc.guiasdespacho.model.Guia;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,12 +21,8 @@ public interface AwsService {
 
     String uploadFile(String bucketName, String fileKey, MultipartFile file);
 
-    void subirGuia(String bucketName, Guia guia);
-
-    void eliminarGuia(String bucketName, Guia guia);
-
     void validarBucket(String bucketName);
 
-    Asset buscarGuia(String bucketName, Guia guia) throws IOException;
+    public List<Asset> filtrarGuias(String bucketName, String fecha, Long transportista) throws IOException;
 
 }

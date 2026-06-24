@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 import com.duoc.guiasdespacho.model.Transportista;
 
 @Repository
-public interface TransportistaRepository extends JpaRepository<Transportista, Integer>{
+public interface TransportistaRepository extends JpaRepository<Transportista, Long>{
 
 
 }

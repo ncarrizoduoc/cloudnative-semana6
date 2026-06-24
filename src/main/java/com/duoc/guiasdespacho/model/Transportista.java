@@ -21,7 +21,7 @@ public class Transportista implements Serializable{
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @NotNull(message="Debe ingresar un nombre de transportista")
     @NotBlank(message="El nombre del transportista no puede ser un texto vacio")

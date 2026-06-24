@@ -1,13 +1,19 @@
 package com.duoc.guiasdespacho.controller;
 
+import static com.duoc.guiasdespacho.config.CONSTANTS.DATEFORMAT;
+import static com.duoc.guiasdespacho.config.CONSTANTS.DATEREGEXP;
+
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.util.SerializationUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,16 +51,14 @@ public class GuiaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Guia> buscarGuia(@PathVariable @PositiveOrZero int id){
+    public ResponseEntity<Guia> buscarGuia(@PathVariable @PositiveOrZero Long id){
         return guiaService.buscarGuia(id)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/new")
-    public ResponseEntity<Guia> registrarGuia(
-                                            @RequestParam("bucketName") String bucketName,
-                                            @Valid @RequestBody GuiaRequest request) throws IOException{
+    @PostMapping
+    public ResponseEntity<Guia> registrarGuia(@Valid @RequestBody GuiaRequest request){
         //Creacion de la guia en base de datos
         Guia creado = guiaService.registrarGuia(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -62,40 +66,38 @@ public class GuiaController {
             .buildAndExpand(creado.getId())
             .toUri();
 
-        //Se guarda el archivo de la guia al EFS
-        guiaService.escribirGuiaAEfs(creado);
-        
-        //Se sube la guia como archivo .txt al bucket S3
-        awsService.subirGuia(bucketName, creado);
-
         return ResponseEntity.created(location).body(creado);
+    }
+
+    @PostMapping("/download")
+    public ResponseEntity<ByteArrayResource> registrarYDescargarGuia(
+        @Valid @RequestBody GuiaRequest request
+    ){
+        // Se guarda la guia y se transforma la guia retornada por el servicio a Bytes
+        Guia creado = guiaService.registrarGuia(request);
+        byte[] data = creado.toString().getBytes(StandardCharsets.UTF_8);
+        ByteArrayResource resource = new ByteArrayResource(data);
+
+        //Generar respuesta con archivo descargable
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{id}")
+            .buildAndExpand(creado.getId())
+            .toUri();
+        return ResponseEntity
+            .created(location)
+            .contentLength(data.length)
+            .contentType(MediaType.TEXT_PLAIN)
+            .header("Content-Disposition", "attachment; filename\"" + creado.getId() + "\"")
+            .body(resource);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Guia> modificarGuia(
-                                            @RequestParam String bucketName,
-                                            @PathVariable @PositiveOrZero int id, 
+                                            @PathVariable @PositiveOrZero Long id, 
                                             @Valid @RequestBody GuiaRequest request){
         
-        //Se valida que el bucket S3 exista
-        awsService.validarBucket(bucketName);
-        //Se crea una copia de la guia de despacho original
-        Optional<Guia> guiaBuscar = guiaService.buscarGuia(id);
-        Guia guiaOriginal = new Guia();
-        if (!guiaBuscar.isEmpty()){
-            guiaOriginal = SerializationUtils.clone(guiaBuscar.get());
-        }
-
         //Se modifica guia en base de datos
         Optional<Guia> response = guiaService.modificarGuia(id, request);
-        if (!response.isEmpty()){
-            Guia guia = response.get();
-            //Se elimina la guia anterior del bucket S3
-            awsService.eliminarGuia(bucketName, guiaOriginal);
-            //Se sube la nueva guia al bucket S3
-            awsService.subirGuia(bucketName, guia);
-        }
-        
         return response
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -103,16 +105,7 @@ public class GuiaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarGuia(@RequestParam String bucketName, @PathVariable @PositiveOrZero int id){
-        //Se valida que el bucket exista
-        awsService.validarBucket(bucketName);
-        //Se elimina la guia del bucket S3
-        Optional<Guia> guiaBuscar = guiaService.buscarGuia(id);
-        if (!guiaBuscar.isEmpty()){
-            Guia guia = guiaBuscar.get();
-            awsService.eliminarGuia(bucketName, guia);
-        }
-
+    public ResponseEntity<Void> eliminarGuia(@PathVariable @PositiveOrZero Long id){
         //Se elimina la guia de la base de datos (si existe) y se envia respuesta
         return guiaService.eliminarGuia(id)
             ? ResponseEntity.noContent().build()
@@ -122,13 +115,10 @@ public class GuiaController {
     @GetMapping("/filtrarGuias")
     public ResponseEntity<List<Asset>> filtrarGuias(
             @RequestParam String bucketName,
-            @RequestParam @Pattern(regexp="[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]", message = "La fecha debe tener el formato dd/MM/yyy") String fecha, 
-            @RequestParam int transportista) throws IOException{
-        List<Guia> guias = guiaService.filtrarGuias(fecha, transportista);
-        List<Asset> lista = new ArrayList<>();
-        for (Guia guia : guias){
-            lista.add(awsService.buscarGuia(bucketName, guia));
-        }
+            @RequestParam(required = false) @Pattern(regexp=DATEREGEXP, message = "La fecha debe tener el formato " + DATEFORMAT) String fecha, 
+            @RequestParam (required = false) Long transportista) throws IOException{
+        
+        List<Asset> lista = awsService.filtrarGuias(bucketName, fecha, transportista);
         return ResponseEntity.ok(lista);
     }
 

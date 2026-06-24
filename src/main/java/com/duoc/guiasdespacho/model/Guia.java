@@ -28,7 +28,7 @@ public class Guia implements Serializable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @NotNull(message = "Debe ingresar el contenido del despacho")
     @NotBlank(message = "El contenido del despacho no puede ser un texto vacio")
@@ -47,4 +47,19 @@ public class Guia implements Serializable{
     @ManyToOne
     @JoinColumn(name = "transportista_id", nullable = false)
     private Transportista transportista;
+
+    @Override
+    public String toString(){
+        String texto = "";
+        
+        texto += "ID: " + id + "\n";
+        texto += "\t" + "- Contenido: " + contenido + "\n";
+        texto += "\t" + "- Direccion: " + direccion + "\n";
+        texto += "\t" + "- Fecha: " + fecha + "\n";
+        texto += "Transportista: " + "\n";
+        texto += "\t" + "- ID: " + transportista.getId() + "\n";
+        texto += "\t" + "- Nombre: " + transportista.getNombre();
+
+        return texto;
+    }
 }

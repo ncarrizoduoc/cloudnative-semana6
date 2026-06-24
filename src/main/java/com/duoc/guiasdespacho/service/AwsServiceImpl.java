@@ -20,7 +20,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.duoc.guiasdespacho.config.CONSTANTS.*;
@@ -39,8 +41,8 @@ public class AwsServiceImpl implements AwsService {
         this.s3Client = s3Client;
     }
 
-    public List<Asset> getS3Files(String bucket){
-        return s3Repository.listObjectsInBucket(bucket);
+    public List<Asset> getS3Files(String bucketName){
+        return s3Repository.listObjectsInBucket(bucketName);
     }
 
     public String getS3FileContent(String bucketName, String fileName) throws IOException{
@@ -81,10 +83,9 @@ public class AwsServiceImpl implements AwsService {
     }
 
     @Override
-    public String uploadFile(String bucketName, String filePath, MultipartFile file){
+    public String uploadFile(String bucketName, String fileKey, MultipartFile file){
         File fileObj = convertMultiPartFileToFile(file);
-        //String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        return s3Repository.uploadFile(bucketName, filePath, fileObj);
+        return s3Repository.uploadFile(bucketName, fileKey, fileObj);
     }
 
     private File convertMultiPartFileToFile(MultipartFile file){
@@ -96,18 +97,6 @@ public class AwsServiceImpl implements AwsService {
         }
         return convertedFile;
     }
-
-    public void subirGuia(String bucketName, Guia guia){
-        String fileKey = generarFileKeyGuia(guia);
-        s3Repository.subirGuia(bucketName, fileKey, guia);
-    }
-
-    public void eliminarGuia(String bucketName, Guia guia){
-        String fileKey = generarFileKeyGuia(guia);
-        if(s3Client.doesObjectExist(bucketName, fileKey)){
-            s3Repository.deleteObject(bucketName, fileKey);
-        }
-    }
     
     private String generarFileKeyGuia(Guia guia){
         //Se formatea fecha de despacho para nombre de directorio en bucket S3
@@ -115,10 +104,10 @@ public class AwsServiceImpl implements AwsService {
         String fecha = guia.getFecha().format(formatter);
 
         //Se obtiene ID de transportista
-        int transportista = guia.getTransportista().getId();
+        Long transportista = guia.getTransportista().getId();
         
         //ID de guia
-        int id = guia.getId();
+        Long id = guia.getId();
 
         //Se obtiene el fileKey de la guia de despacho usando las variables anteriores
         String fileKey = String.format("%s/transportista%d/guia%d.txt", fecha, transportista, id);
@@ -132,8 +121,45 @@ public class AwsServiceImpl implements AwsService {
         }
     }
 
-    public Asset buscarGuia(String bucketName, Guia guia) throws IOException{
-        String fileKey = generarFileKeyGuia(guia);
-        return s3Repository.getObjectInfo(bucketName, fileKey);
+    // Metodo que filtra las guias del bucket S3 por fecha y/o transportista, devolviendo el listado
+    // de objetos que cumplen con los filtros
+    public List<Asset> filtrarGuias(String bucketName, String fecha, Long transportista) throws IOException{
+        List<Asset> guias = new ArrayList<>();
+        List<Asset> objetosBucket = getS3Files(bucketName);
+
+        // Si no se ha ingresado una fecha o transportista para filtrar, se retornan todos los objetos
+        if (fecha == null && transportista == null){
+            return objetosBucket;
+        }
+
+        // Se crea una regexp que se usara para filtrar los objetos del bucket por su key
+        // Formato expresion "^fecha*/transportista\\d+/.*";
+        String regexp = "^";
+
+        // Se agrega la fecha a la regexp (si no hay fecha se admite cualquier valor)
+        if (fecha != null) {
+            String[] datosFecha = fecha.trim().split("/");
+            String fechaFormateada = datosFecha[2] + datosFecha[1] + datosFecha[0];
+            regexp += fechaFormateada + "/";
+        } else {
+            regexp += ".*/";
+        }
+
+        // Se agrega el ID de transportista a la regexp (si no hay transportista, se admite cualquier valor)
+        regexp += "transportista";
+        if (transportista != null){
+            regexp += transportista + "/.*";
+        } else {
+            regexp += "\\d+/.*";
+        }
+
+        // Se filtran los objetos del bucket por key usando la regexp
+        for (Asset asset : objetosBucket){
+            if (asset.getKey().matches(regexp)){
+                guias.add(asset);
+            }
+        }
+
+        return guias;
     }
 }

@@ -19,7 +19,7 @@ public class TransportistaService {
         return transpoRepo.findAll();
     }
 
-    public Optional<Transportista> buscarTransportista(int id){
+    public Optional<Transportista> buscarTransportista(Long id){
         return transpoRepo.findById(id);
     }
 
@@ -27,7 +27,7 @@ public class TransportistaService {
         return transpoRepo.save(transportista);
     }
 
-    public Optional<Transportista> modificarTransportista(int id, Transportista transportista){
+    public Optional<Transportista> modificarTransportista(Long id, Transportista transportista){
         if (transpoRepo.existsById(id)){
             transportista.setId(id);
             return Optional.of(transpoRepo.save(transportista));
@@ -36,7 +36,7 @@ public class TransportistaService {
         }
     }
 
-    public boolean eliminarTransportista(int id){
+    public boolean eliminarTransportista(Long id){
         if (transpoRepo.existsById(id)){
             transpoRepo.deleteById(id);
             return true;

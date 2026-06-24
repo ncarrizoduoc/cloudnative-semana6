@@ -1,5 +1,7 @@
 package com.duoc.guiasdespacho.dto;
 
+import static com.duoc.guiasdespacho.config.CONSTANTS.*;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -13,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GuiaRequest {
     
-    private int id;
+    private Long id;
     
     @NotNull(message = "Debe ingresar el contenido del despacho")
     @NotBlank(message = "El contenido del despacho no puede ser un texto vacio")
@@ -25,9 +27,9 @@ public class GuiaRequest {
     @Size(min = 3, max = 200, message = "La direccion de despacho debe tener entre 3 y 200 caracteres")
     private String direccion;
 
-    @Pattern(regexp = "[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]", message = "La fecha debe ser ingresada en el formato dd/MM/yyyy")
+    @Pattern(regexp = DATEREGEXP, message = "La fecha debe ser ingresada en el formato " + DATEFORMAT)
     private String fecha;
 
-    private int transportista;
+    private Long transportista;
 
 }

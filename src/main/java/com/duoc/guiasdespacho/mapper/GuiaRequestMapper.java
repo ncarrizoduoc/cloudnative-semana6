@@ -31,8 +31,8 @@ public class GuiaRequestMapper {
         LocalDate fecha = LocalDate.parse(request.getFecha(), DateTimeFormatter.ofPattern(DATEFORMAT));
         guia.setFecha(fecha);
 
-        //Convertir transportista de Integer (se ingresa el ID) a Transportista
-        int transpoId = request.getTransportista();
+        //Convertir transportista de Long (se ingresa el ID) a Transportista
+        Long transpoId = request.getTransportista();
         if (transpoRepo.existsById(transpoId)){
             Transportista transpo = transpoRepo.findById(transpoId).get();
             guia.setTransportista(transpo);
